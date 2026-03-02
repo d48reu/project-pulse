@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #16161f;
+    --bg-card-hover: #1c1c28;
+    --border: #2a2a3a;
+    --border-glow: #3a3a5a;
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888a0;
+    --text-muted: #555568;
+    --accent-cyan: #00d4ff;
+    --accent-green: #00ff88;
+    --accent-amber: #ffaa00;
+    --accent-red: #ff4466;
+    --accent-purple: #aa66ff;
+    --accent-blue: #4488ff;
+    --status-active: #00ff88;
+    --status-paused: #ffaa00;
+    --status-planning: #4488ff;
+    --status-maintenance: #aa66ff;
+    --status-complete: #00d4ff;
+    --status-stalled: #ff4466;
+    --status-unknown: #555568;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'IBM Plex Sans', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header */
+.header {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-cyan), transparent);
+}
+
+.header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.logo {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: -0.02em;
+}
+
+.logo span {
+    color: var(--text-muted);
+    font-weight: 300;
+}
+
+.header-meta {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    gap: 2rem;
+}
+
+.header-meta .pulse-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--accent-green); }
+    50% { opacity: 0.4; box-shadow: 0 0 8px var(--accent-green); }
+}
+
+/* Stats bar */
+.stats-bar {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    line-height: 1;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Filter bar */
+.filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-btn:hover, .filter-btn.active {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+/* Project grid */
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Project card */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    transition: all 0.3s;
+}
+
+.card:hover {
+    border-color: var(--border-glow);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.card[data-status="Active"]::before { background: var(--status-active); }
+.card[data-status="Paused"]::before { background: var(--status-paused); }
+.card[data-status="Planning"]::before { background: var(--status-planning); }
+.card[data-status="Maintenance"]::before { background: var(--status-maintenance); }
+.card[data-status="Complete"]::before { background: var(--status-complete); }
+.card[data-status="Stalled"]::before { background: var(--status-stalled); }
+.card::before { background: var(--status-unknown); }
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.card-name {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.card-name a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.card-name a:hover {
+    color: var(--accent-cyan);
+}
+
+.status-badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 0.2rem 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+.status-Active { color: var(--status-active); border-color: var(--status-active); background: rgba(0, 255, 136, 0.08); }
+.status-Paused { color: var(--status-paused); border-color: var(--status-paused); background: rgba(255, 170, 0, 0.08); }
+.status-Planning { color: var(--status-planning); border-color: var(--status-planning); background: rgba(68, 136, 255, 0.08); }
+.status-Maintenance { color: var(--status-maintenance); border-color: var(--status-maintenance); background: rgba(170, 102, 255, 0.08); }
+.status-Complete { color: var(--status-complete); border-color: var(--status-complete); background: rgba(0, 212, 255, 0.08); }
+.status-Stalled { color: var(--status-stalled); border-color: var(--status-stalled); background: rgba(255, 68, 102, 0.08); }
+
+.card-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.card-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.card-section-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+}
+
+.next-steps {
+    list-style: none;
+    padding: 0;
+}
+
+.next-steps li {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0.3rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+    line-height: 1.4;
+}
+
+.next-steps li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent-cyan);
+    font-weight: 700;
+}
+
+.blocker {
+    font-size: 0.8rem;
+    color: var(--accent-amber);
+    padding: 0.3rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+}
+
+.blocker::before {
+    content: '!';
+    position: absolute;
+    left: 0;
+    font-weight: 700;
+    color: var(--accent-red);
+}
+
+.tech-tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.tech-tag {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    background: rgba(170, 102, 255, 0.1);
+    border: 1px solid rgba(170, 102, 255, 0.2);
+    color: var(--accent-purple);
+}
+
+.doc-tags {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.doc-tag {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    padding: 0.1rem 0.4rem;
+    background: rgba(0, 212, 255, 0.05);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    color: var(--accent-cyan);
+    opacity: 0.6;
+}
+
+.claude-badge {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid rgba(255, 170, 0, 0.2);
+    color: var(--accent-amber);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    margin-top: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+    transition: width 0.5s ease;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.empty-state h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container { padding: 1rem; }
+    .project-grid { grid-template-columns: 1fr; }
+    .stats-bar { gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">PROJECT<span>/</span>PULSE</div>
+        </div>
+        <div class="header-meta">
+            <span><span class="pulse-dot"></span>SCAN COMPLETE</span>
+            <span>GENERATED: 2026-02-24 22:43 UTC</span>
+            <span>PROJECTS: 4</span>
+        </div>
+    </header>
+
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="project-grid" id="project-grid"></div>
+</div>
+
+<script>
+const projects = [
+  {
+    "name": "commission-search",
+    "path": "/home/claude/test-projects/commission-search",
+    "summary": "Project: commission-search",
+    "status": "Unknown (offline mode)",
+    "current_phase": "See docs for details",
+    "progress": "N/A",
+    "next_steps": [
+      "Index 2024 commission meeting minutes",
+      "Add full-text search across resolutions",
+      "Build API for external integrations"
+    ],
+    "blockers": [],
+    "tech_stack": [],
+    "branch": "",
+    "remote_url": "",
+    "last_commit_msg": "",
+    "last_commit_hash": "",
+    "last_commit_date": "",
+    "uncommitted_changes": 0,
+    "docs": [
+      "TODO.md",
+      "CLAUDE.md"
+    ],
+    "has_claude_code": true
+  },
+  {
+    "name": "dade-os",
+    "path": "/home/claude/test-projects/dade-os",
+    "summary": "Project: dade-os",
+    "status": "Unknown (offline mode)",
+    "current_phase": "See docs for details",
+    "progress": "N/A",
+    "next_steps": [
+      "Review project docs"
+    ],
+    "blockers": [],
+    "tech_stack": [
+      "react",
+      "tailwind",
+      "typescript"
+    ],
+    "branch": "",
+    "remote_url": "",
+    "last_commit_msg": "",
+    "last_commit_hash": "",
+    "last_commit_date": "",
+    "uncommitted_changes": 0,
+    "docs": [
+      "ROADMAP.md",
+      "CLAUDE.md"
+    ],
+    "has_claude_code": true
+  },
+  {
+    "name": "miami-21-translator",
+    "path": "/home/claude/test-projects/miami-21-translator",
+    "summary": "Project: miami-21-translator",
+    "status": "Unknown (offline mode)",
+    "current_phase": "See docs for details",
+    "progress": "N/A",
+    "next_steps": [
+      "Add Spanish language support to query interface",
+      "Fix edge case in T6-8 zone parsing",
+      "Write integration tests for API endpoints"
+    ],
+    "blockers": [],
+    "tech_stack": [
+      "fastapi",
+      "python",
+      "react"
+    ],
+    "branch": "",
+    "remote_url": "",
+    "last_commit_msg": "",
+    "last_commit_hash": "",
+    "last_commit_date": "",
+    "uncommitted_changes": 0,
+    "docs": [
+      "ROADMAP.md",
+      "GSD.md",
+      "CLAUDE.md"
+    ],
+    "has_claude_code": true
+  },
+  {
+    "name": "vector-wireframe",
+    "path": "/home/claude/test-projects/vector-wireframe",
+    "summary": "AI-powered tool to generate clean vector wireframes from sketches.",
+    "status": "Unknown (offline mode)",
+    "current_phase": "See docs for details",
+    "progress": "N/A",
+    "next_steps": [
+      "Review project docs"
+    ],
+    "blockers": [],
+    "tech_stack": [
+      "python"
+    ],
+    "branch": "",
+    "remote_url": "",
+    "last_commit_msg": "",
+    "last_commit_hash": "",
+    "last_commit_date": "",
+    "uncommitted_changes": 0,
+    "docs": [
+      "README.md"
+    ],
+    "has_claude_code": false
+  }
+];
+
+// Calculate stats
+const statusCounts = {};
+projects.forEach(p => {
+    const s = p.status.split(' ')[0]; // Handle "Unknown (offline mode)"
+    statusCounts[s] = (statusCounts[s] || 0) + 1;
+});
+
+const totalSteps = projects.reduce((a, p) => a + p.next_steps.length, 0);
+const totalBlockers = projects.reduce((a, p) => a + p.blockers.length, 0);
+const withChanges = projects.filter(p => p.uncommitted_changes > 0).length;
+
+// Render stats
+const statsBar = document.getElementById('stats-bar');
+const stats = [
+    { value: projects.length, label: 'Projects' },
+    { value: totalSteps, label: 'Pending Actions' },
+    { value: totalBlockers, label: 'Blockers' },
+    { value: withChanges, label: 'Uncommitted' },
+];
+stats.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div>`;
+    statsBar.appendChild(div);
+});
+
+// Render filters
+const filterBar = document.getElementById('filter-bar');
+const allStatuses = ['All', ...new Set(projects.map(p => p.status.split(' ')[0]))];
+allStatuses.forEach((status, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = status;
+    btn.onclick = () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderGrid(status === 'All' ? null : status);
+    };
+    filterBar.appendChild(btn);
+});
+
+// Render project grid
+function renderGrid(filterStatus) {
+    const grid = document.getElementById('project-grid');
+    grid.innerHTML = '';
+
+    const filtered = filterStatus
+        ? projects.filter(p => p.status.startsWith(filterStatus))
+        : projects;
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><h2>No projects found</h2><p>No projects match the current filter.</p></div>';
+        return;
+    }
+
+    filtered.forEach(p => {
+        const statusClass = p.status.split(' ')[0].replace(/[^a-zA-Z]/g, '');
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.status = statusClass;
+
+        let nameHtml = p.name;
+        if (p.remote_url) {
+            nameHtml = `<a href="${p.remote_url}" target="_blank" rel="noopener">${p.name}</a>`;
+        }
+
+        let progressHtml = '';
+        const progressMatch = p.progress.match(/(\d+)/);
+        if (progressMatch) {
+            const pct = parseInt(progressMatch[1]);
+            progressHtml = `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+        }
+
+        let metaHtml = '';
+        if (p.branch) metaHtml += `<span class="card-meta-item">⎇ ${p.branch}</span>`;
+        if (p.last_commit_date) metaHtml += `<span class="card-meta-item">⏱ ${p.last_commit_date}</span>`;
+        if (p.uncommitted_changes > 0) metaHtml += `<span class="card-meta-item" style="color:var(--accent-amber)">△ ${p.uncommitted_changes} changes</span>`;
+        if (p.current_phase) metaHtml += `<span class="card-meta-item">◈ ${p.current_phase}</span>`;
+
+        let stepsHtml = '';
+        if (p.next_steps.length > 0) {
+            stepsHtml = `<div class="card-section-title">Next Steps</div><ul class="next-steps">${p.next_steps.map(s => `<li>${s}</li>`).join('')}</ul>`;
+        }
+
+        let blockersHtml = '';
+        if (p.blockers.length > 0) {
+            blockersHtml = `<div class="card-section-title">Blockers</div>${p.blockers.map(b => `<div class="blocker">${b}</div>`).join('')}`;
+        }
+
+        let techHtml = '';
+        if (p.tech_stack.length > 0) {
+            techHtml = `<div class="tech-tags">${p.tech_stack.map(t => `<span class="tech-tag">${t}</span>`).join('')}</div>`;
+        }
+
+        let docsHtml = '';
+        if (p.docs.length > 0) {
+            docsHtml = `<div class="doc-tags">${p.docs.map(d => `<span class="doc-tag">${d}</span>`).join('')}</div>`;
+        }
+
+        let claudeBadge = p.has_claude_code ? '<span class="claude-badge">⚡ Claude Code</span>' : '';
+
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-name">${nameHtml}</div>
+                <span class="status-badge status-${statusClass}">${p.status}</span>
+            </div>
+            <div class="card-summary">${p.summary}</div>
+            <div class="card-meta">${metaHtml}</div>
+            ${stepsHtml}
+            ${blockersHtml}
+            ${techHtml}
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem">
+                ${claudeBadge}
+            </div>
+            ${docsHtml}
+            ${progressHtml}
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+renderGrid(null);
+</script>
+</body>
+</html>

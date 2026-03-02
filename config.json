@@ -1,0 +1,41 @@
+{
+  "project_name": "Project Pulse",
+  "version": "1.0.0",
+  "scan_paths": [
+    "~/Projects",
+    "~/Code",
+    "~/dev",
+    "~/repos",
+    "~/github"
+  ],
+  "doc_patterns": [
+    "ROADMAP.md",
+    "TODO.md",
+    "GSD.md",
+    "CLAUDE.md",
+    "README.md",
+    "PLAN.md",
+    "STATUS.md",
+    "CHANGELOG.md",
+    "TASKS.md"
+  ],
+  "git_indicators": [
+    ".git",
+    ".github"
+  ],
+  "claude_code_indicators": [
+    "CLAUDE.md",
+    ".claude"
+  ],
+  "output_dir": "./output",
+  "max_doc_size_kb": 500,
+  "excluded_dirs": [
+    "node_modules",
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "dist",
+    "build"
+  ]
+}
