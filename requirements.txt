@@ -1,0 +1,3 @@
+# Standard library only — no required external dependencies
+# Optional: httpx for Claude API summarization (falls back to urllib)
+# pip install httpx
