@@ -2,7 +2,7 @@
 
 Auto-discovery project status dashboard. Scans the filesystem for Claude Code projects and generates a consolidated status report with optional AI summarization.
 
-**Status:** Working prototype, not version controlled
+**Status:** Working prototype, version controlled (git initialized)
 
 ## How It Works
 
@@ -46,6 +46,4 @@ Self-contained HTML dashboard with dark cyberpunk theme. Shows project cards wit
 
 ## TODO
 
-- Initialize git repo and add `.gitignore`
-- Remove unrelated files (`CommonInstaller.exe`, `SteamSetup.exe`, `files.zip`)
-- Clean up duplicate `files/` directory
+- Add `requirements.txt` (stdlib-only, document optional httpx dependency)
